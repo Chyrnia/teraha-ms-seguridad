@@ -13,9 +13,11 @@ public interface UserRepository extends BaseRepository<User> {
 
 	Optional<User> findByIdAndEnabledTrue(Long id);
 
-	Optional<User> findByUsernameAndEnabledTrue(String query);
+	Optional<User> findByUsernameAndEnabledTrue(String username);
 
-	Optional<User> findByUsername(String query);
+	Optional<User> findByUsername(String username);
+
+	boolean existsByEmail(String email);
 
 	Page<User> findAllByEnabledTrue(Pageable page);
 
