@@ -31,6 +31,8 @@ public class JwtService {
 
         List<String> roles = authentication.getAuthorities()
             .stream()
+			.filter(authority ->
+					authority.getAuthority().startsWith("ROLE_"))
             .map(GrantedAuthority::getAuthority)
             .toList();
 
