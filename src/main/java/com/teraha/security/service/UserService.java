@@ -14,6 +14,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.CacheEvict;
 
 import com.teraha.commons.dtos.CreateUserRequestDTO;
 import com.teraha.commons.dtos.UserDTO;
@@ -45,6 +48,7 @@ public class UserService {
     @Value("${security.pagination.page-size:20}")
     private int pageSize;
 
+	@CachePut(cacheNames = "security:users", key = "#result.id")
     public UserDTO createUser(CreateUserRequestDTO dto) {
         String username = dto.getUsername().trim();
         String email = dto.getEmail().trim().toLowerCase(Locale.ROOT);
@@ -76,6 +80,7 @@ public class UserService {
         return userMapper.toDto(saved);
     }
 
+	@Cacheable(cacheNames = "security:users", key = "#id")
     @Transactional(readOnly = true)
     public UserDTO findUserById(Long id) {
         return userRepository.findByIdAndEnabledTrue(id)
@@ -105,6 +110,7 @@ public class UserService {
             .map(userMapper::toDto);
     }
 
+	@CacheEvict(cacheNames = "security:users", key = "#id")
     public void disableUser(Long id) {
         User user = userRepository.findByIdAndEnabledTrue(id)
             .orElseThrow(() -> new UserNotFoundException(id));
