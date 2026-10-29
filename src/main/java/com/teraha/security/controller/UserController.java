@@ -19,11 +19,14 @@ import com.teraha.commons.dtos.CreateUserRequestDTO;
 import com.teraha.commons.dtos.UserDTO;
 import com.teraha.security.service.UserService;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/users")
+@SecurityRequirement(name = "bearerAuth")
 @RequiredArgsConstructor
 public class UserController {
 
