@@ -22,6 +22,7 @@ import com.teraha.commons.dtos.CreateUserRequestDTO;
 import com.teraha.commons.dtos.UserDTO;
 import com.teraha.commons.entities.Role;
 import com.teraha.commons.entities.User;
+import com.teraha.commons.dtos.UpdateUserRequestDTO;
 import com.teraha.security.exception.InvalidRoleAssignmentException;
 import com.teraha.security.exception.RoleNotFoundException;
 import com.teraha.security.exception.UserAlreadyExistsException;
@@ -29,6 +30,7 @@ import com.teraha.security.exception.UserNotFoundException;
 import com.teraha.security.mapper.UserMapper;
 import com.teraha.security.repository.RoleRepository;
 import com.teraha.security.repository.UserRepository;
+
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -120,7 +122,7 @@ public class UserService {
         log.info("Disabled user with username {}", user.getUsername());
     }
 
-    public UserDTO updateUserRoles(Long id, List<String> roleNames) {
+    /*public UserDTO updateUserRoles(Long id, List<String> roleNames) {
         User user = userRepository.findByIdAndEnabledTrue(id)
             .orElseThrow(() -> new UserNotFoundException(id));
 
@@ -137,6 +139,45 @@ public class UserService {
 
         log.info("Updated roles for user with username {}",
             saved.getUsername());
+
+        return userMapper.toDto(saved);
+    }*/
+    @CachePut(cacheNames = "security:users", key = "#id")
+    public UserDTO updateUser(Long id, UpdateUserRequestDTO dto) {
+        User user = userRepository.findByIdAndEnabledTrue(id)
+                .orElseThrow(() -> new UserNotFoundException(id));
+
+        if (dto.getUsername() != null && !dto.getUsername().isBlank()) {
+            String newUsername = dto.getUsername().trim();
+            if (!user.getUsername().equals(newUsername) && userRepository.findByUsername(newUsername).isPresent()) {
+                throw new UserAlreadyExistsException("A user with that username already exists");
+            }
+            user.setUsername(newUsername);
+        }
+
+        if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
+            String newEmail = dto.getEmail().trim().toLowerCase(Locale.ROOT);
+            if (!user.getEmail().equals(newEmail) && userRepository.existsByEmail(newEmail)) {
+                throw new UserAlreadyExistsException("A user with that email already exists");
+            }
+            user.setEmail(newEmail);
+        }
+
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
+        }
+
+        if (dto.getRoles() != null && !dto.getRoles().isEmpty()) {
+            Set<Role> newRoles = resolveRoles(dto.getRoles());
+            for (Role role : new ArrayList<>(user.getRoles())) {
+                user.removeRole(role);
+            }
+            newRoles.forEach(user::addRole);
+        }
+
+        User saved = userRepository.save(user);
+
+        log.info("Updated user with username {}", saved.getUsername());
 
         return userMapper.toDto(saved);
     }

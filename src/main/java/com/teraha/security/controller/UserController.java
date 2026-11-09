@@ -2,6 +2,8 @@ package com.teraha.security.controller;
 
 import java.util.List;
 
+import com.teraha.commons.dtos.UpdateUserRequestDTO;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -72,12 +74,20 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/{id}/roles")
+    /*@PutMapping("/{id}/roles")
     public ResponseEntity<UserDTO> updateUserRoles(
             @PathVariable Long id,
             @RequestBody List<String> roles) {
 
         return ResponseEntity.ok(
             userService.updateUserRoles(id, roles));
+    }*/
+    @PutMapping("/{id}")
+    @Operation(summary = "Update user", description = "Updates username, email, password, and roles in a single request")
+    public ResponseEntity<UserDTO> updateUser(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateUserRequestDTO request) {
+
+        return ResponseEntity.ok(userService.updateUser(id, request));
     }
 }
