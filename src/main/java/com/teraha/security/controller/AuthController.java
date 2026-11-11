@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import com.teraha.commons.dtos.LoginRequestDTO;
 import com.teraha.commons.dtos.LoginResponseDTO;
 import com.teraha.security.service.JwtService;
+import com.teraha.security.service.UserService;
 
 @Slf4j
 @RestController
@@ -30,6 +31,7 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+	private final UserService userService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(
@@ -54,6 +56,8 @@ public class AuthController {
                     "timestamp", Instant.now().toString()
                 ));
         }
+
+		userService.updateLastLogin(authentication.getName());
 
         JwtService.IssuedToken issued =
             jwtService.issueToken(authentication);

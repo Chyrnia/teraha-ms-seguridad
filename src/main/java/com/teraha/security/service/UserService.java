@@ -5,6 +5,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -182,28 +184,39 @@ public class UserService {
         return userMapper.toDto(saved);
     }
 
-    private Set<Role> resolveRoles(List<String> roleNames) {
-        if (roleNames == null || roleNames.isEmpty()) {
-            throw new InvalidRoleAssignmentException(
-                "At least one role must be assigned");
-        }
+	@Transactional
+	@PreAuthorize("permitAll()")
+	public void updateLastLogin(String username) {
+		User user = userRepository.findByUsername(username)
+			.orElseThrow(() -> new UserNotFoundException(username));
 
-        Set<Role> resolved = new LinkedHashSet<>();
+		user.setLastLogin(OffsetDateTime.now(ZoneOffset.UTC));
 
-        for (String rawName : roleNames) {
-            if (rawName == null || rawName.isBlank()) {
-                throw new InvalidRoleAssignmentException(
-                    "Role names must not be blank");
-            }
+		log.info("Updated last login for user {}", username);
+	}
 
-            String name = rawName.trim().toUpperCase(Locale.ROOT);
+	private Set<Role> resolveRoles(List<String> roleNames) {
+		if (roleNames == null || roleNames.isEmpty()) {
+			throw new InvalidRoleAssignmentException(
+					"At least one role must be assigned");
+		}
 
-            Role role = roleRepository.findByName(name)
-                .orElseThrow(() -> new RoleNotFoundException(name));
+		Set<Role> resolved = new LinkedHashSet<>();
 
-            resolved.add(role);
-        }
+		for (String rawName : roleNames) {
+			if (rawName == null || rawName.isBlank()) {
+				throw new InvalidRoleAssignmentException(
+						"Role names must not be blank");
+			}
 
-        return resolved;
-    }
+			String name = rawName.trim().toUpperCase(Locale.ROOT);
+
+			Role role = roleRepository.findByName(name)
+				.orElseThrow(() -> new RoleNotFoundException(name));
+
+			resolved.add(role);
+		}
+
+		return resolved;
+	}
 }
